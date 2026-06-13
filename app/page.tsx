@@ -1,7 +1,15 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import {
+  Area,
+  AreaChart,
+  CartesianGrid,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 
 type Row = {
   year: number;
@@ -20,7 +28,10 @@ function simulate(monthly: number, annualRate: number, years: number, current: n
   const monthlyRate = annualRate / 100 / 12;
   let balance = current;
   let principal = current;
-  const rows: Row[] = [{ year: 0, principal, balance, profit: balance - principal }];
+
+  const rows: Row[] = [
+    { year: 0, principal, balance, profit: balance - principal },
+  ];
 
   for (let month = 1; month <= years * 12; month++) {
     balance = balance * (1 + monthlyRate) + monthly;
@@ -39,7 +50,12 @@ function simulate(monthly: number, annualRate: number, years: number, current: n
   return rows;
 }
 
-function calcFireYears(current: number, monthly: number, annualRate: number, yearlyCost: number) {
+function calcFireYears(
+  current: number,
+  monthly: number,
+  annualRate: number,
+  yearlyCost: number
+) {
   const target = yearlyCost * 25;
   const monthlyRate = annualRate / 100 / 12;
   let balance = current;
@@ -60,24 +76,36 @@ export default function Home() {
   const [years, setYears] = useState(20);
   const [current, setCurrent] = useState(0);
   const [yearlyCost, setYearlyCost] = useState(3000000);
+  const [age, setAge] = useState(35);
 
-  const data = useMemo(() => simulate(monthly, annualRate, years, current), [monthly, annualRate, years, current]);
+  const data = useMemo(
+    () => simulate(monthly, annualRate, years, current),
+    [monthly, annualRate, years, current]
+  );
+
   const last = data[data.length - 1];
   const fireTarget = yearlyCost * 25;
   const fireYears = calcFireYears(current, monthly, annualRate, yearlyCost);
+  const fireAge = fireYears === null ? null : age + fireYears;
+  const fireProgress = Math.min(100, Math.round((current / fireTarget) * 100));
+
+  const fasterFireYears = calcFireYears(current, monthly + 10000, annualRate, yearlyCost);
+  const fasterFireAge = fasterFireYears === null ? null : age + fasterFireYears;
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-slate-50 to-emerald-50 px-4 py-8 text-slate-900 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-6xl">
         <section className="mb-8 rounded-[2rem] bg-white/90 p-7 shadow-xl shadow-slate-200/60 ring-1 ring-slate-100 sm:p-12">
-          <p className="mb-3 text-sm font-bold text-emerald-700">ログイン不要・無料で試算</p>
+          <p className="mb-3 text-sm font-bold text-emerald-700">
+            ログイン不要・無料で試算
+          </p>
           <h1 className="text-4xl font-black tracking-tight sm:text-6xl">
             新NISA・FIRE
             <br />
-            かんたんシミュレーター
+            かんたん診断
           </h1>
           <p className="mt-5 max-w-3xl text-lg leading-8 text-slate-600">
-            毎月の積立額、想定年利、積立年数を入力すると、将来の資産額・元本・運用益・FIRE達成目安を確認できます。
+            毎月の積立額、年齢、年間生活費を入力すると、あなたが何歳でFIREできそうかをかんたんに診断できます。
           </p>
         </section>
 
@@ -86,6 +114,7 @@ export default function Home() {
             <h2 className="text-2xl font-black">条件を入力</h2>
 
             <div className="mt-6 space-y-5">
+              <Input label="現在の年齢" value={age} setValue={setAge} suffix="歳" min={18} step={1} />
               <Input label="毎月積立額" value={monthly} setValue={setMonthly} suffix="円" min={0} step={1000} />
               <Input label="想定年利" value={annualRate} setValue={setAnnualRate} suffix="%" min={0} step={0.1} />
               <Input label="積立年数" value={years} setValue={setYears} suffix="年" min={1} step={1} />
@@ -95,24 +124,36 @@ export default function Home() {
           </section>
 
           <section className="rounded-[2rem] bg-white p-6 shadow-xl shadow-slate-200/60 ring-1 ring-slate-100">
-            <h2 className="text-2xl font-black">シミュレーション結果</h2>
+            <h2 className="text-2xl font-black">診断結果</h2>
+
+            <div className="mt-6 rounded-3xl bg-slate-900 p-6 text-white">
+              <p className="text-sm text-slate-300">あなたのFIRE予想年齢</p>
+              <p className="mt-2 text-5xl font-black text-emerald-300">
+                {fireAge === null ? "未達成" : `${fireAge}歳`}
+              </p>
+
+              <p className="mt-4 text-lg font-bold">
+                {fireYears === 0
+                  ? "すでにFIRE目標を達成しています"
+                  : fireYears === null
+                  ? "現在の条件では80年以内の達成は難しそうです"
+                  : `あと約${fireYears}年でFIRE目標に到達する見込みです`}
+              </p>
+
+              <div className="mt-6 grid gap-4 sm:grid-cols-3">
+                <MiniCard title="必要資産" value={yen.format(fireTarget)} />
+                <MiniCard title="現在の達成率" value={`${fireProgress}%`} />
+                <MiniCard
+                  title="毎月+1万円なら"
+                  value={fasterFireAge === null ? "未達成" : `${fasterFireAge}歳`}
+                />
+              </div>
+            </div>
 
             <div className="mt-6 grid gap-4 sm:grid-cols-3">
               <ResultCard title="最終資産額" value={yen.format(last.balance)} strong />
               <ResultCard title="元本" value={yen.format(last.principal)} />
               <ResultCard title="運用益" value={yen.format(last.profit)} />
-            </div>
-
-            <div className="mt-5 rounded-3xl bg-slate-900 p-6 text-white">
-              <p className="text-sm text-slate-300">FIRE目標額（年間生活費 × 25）</p>
-              <p className="mt-2 text-3xl font-black">{yen.format(fireTarget)}</p>
-              <p className="mt-4 text-lg font-bold text-emerald-300">
-                {fireYears === 0
-                  ? "すでにFIRE目標を達成しています"
-                  : fireYears === null
-                  ? "80年以内の達成は難しそうです"
-                  : `あと約${fireYears}年でFIRE目標に到達`}
-              </p>
             </div>
 
             <div className="mt-8 h-96 w-full">
@@ -121,7 +162,10 @@ export default function Home() {
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="year" tickFormatter={(v) => `${v}年`} />
                   <YAxis tickFormatter={(v) => `${Math.round(Number(v) / 10000)}万`} />
-                  <Tooltip formatter={(value) => yen.format(Number(value))} labelFormatter={(label) => `${label}年後`} />
+                  <Tooltip
+                    formatter={(value) => yen.format(Number(value))}
+                    labelFormatter={(label) => `${label}年後`}
+                  />
                   <Area type="monotone" dataKey="balance" name="資産額" strokeWidth={3} fillOpacity={0.22} />
                   <Area type="monotone" dataKey="principal" name="元本" strokeWidth={2} fillOpacity={0.08} />
                 </AreaChart>
@@ -171,11 +215,28 @@ function Input({
   );
 }
 
-function ResultCard({ title, value, strong = false }: { title: string; value: string; strong?: boolean }) {
+function ResultCard({
+  title,
+  value,
+  strong = false,
+}: {
+  title: string;
+  value: string;
+  strong?: boolean;
+}) {
   return (
     <div className={strong ? "rounded-3xl bg-emerald-600 p-5 text-white shadow-lg" : "rounded-3xl bg-slate-100 p-5"}>
       <p className={strong ? "text-sm text-emerald-50" : "text-sm text-slate-500"}>{title}</p>
       <p className="mt-2 text-2xl font-black tracking-tight">{value}</p>
+    </div>
+  );
+}
+
+function MiniCard({ title, value }: { title: string; value: string }) {
+  return (
+    <div className="rounded-2xl bg-white/10 p-4">
+      <p className="text-xs text-slate-300">{title}</p>
+      <p className="mt-2 text-lg font-black">{value}</p>
     </div>
   );
 }
