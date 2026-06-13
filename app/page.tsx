@@ -303,7 +303,6 @@ export default function Home() {
             <footer className="mt-6 flex flex-wrap gap-4 text-sm text-slate-500">
               <a href="/privacy" className="underline">プライバシーポリシー</a>
               <a href="/about" className="underline">運営者情報</a>
-              <a href="/sitemap.xml" className="underline">サイトマップ</a>
             </footer>
           </section>
         </div>
