@@ -30,7 +30,6 @@ function simulate(monthly: number, annualRate: number, years: number, current: n
   const monthlyRate = annualRate / 100 / 12;
   let balance = current;
   let principal = current;
-
   const rows: Row[] = [{ year: 0, principal, balance, profit: balance - principal }];
 
   for (let month = 1; month <= years * 12; month++) {
@@ -84,19 +83,10 @@ export default function Home() {
   const fireAge = fireYears === null ? null : age + fireYears;
 
   const remainingAmount = Math.max(0, fireTarget - last.balance);
-
-  const fireProgress = Math.min(
-    100,
-    Math.round((last.balance / fireTarget) * 100)
-  );
+  const fireProgress = Math.min(100, Math.round((last.balance / fireTarget) * 100));
 
   const recommendedMonthly = Math.round(monthly * 1.5);
-  const recommendedFireYears = calcFireYears(
-    current,
-    recommendedMonthly,
-    annualRate,
-    yearlyCost
-  );
+  const recommendedFireYears = calcFireYears(current, recommendedMonthly, annualRate, yearlyCost);
   const recommendedFireAge =
     recommendedFireYears === null ? null : age + recommendedFireYears;
 
@@ -201,12 +191,8 @@ export default function Home() {
               <div className="mt-6 grid gap-4 sm:grid-cols-3">
                 <MiniCard title="達成率" value={`${fireProgress}%`} />
                 <MiniCard
-                  title="毎月+1万円なら"
-                  value={
-                    calcFireYears(current, monthly + 10000, annualRate, yearlyCost) === null
-                      ? "未達成"
-                      : `${age + Number(calcFireYears(current, monthly + 10000, annualRate, yearlyCost))}歳`
-                  }
+                  title="改善後のFIRE年齢"
+                  value={recommendedFireAge === null ? "未達成" : `${recommendedFireAge}歳`}
                 />
                 <MiniCard
                   title="短縮効果"
@@ -220,7 +206,7 @@ export default function Home() {
                 rel="noopener noreferrer"
                 className="mt-6 block rounded-2xl bg-white px-5 py-4 text-center text-sm font-black text-slate-900 transition hover:bg-emerald-100"
               >
-                Xで診断結果をシェアする
+                結果をXで共有する
               </a>
             </div>
 
