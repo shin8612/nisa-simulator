@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Area,
   AreaChart,
@@ -19,6 +19,7 @@ type Row = {
 };
 
 const SITE_URL = "https://nisa-simulator-six.vercel.app/";
+const NISA_MONTHLY_LIMIT = 300000;
 
 const yen = new Intl.NumberFormat("ja-JP", {
   style: "currency",
@@ -64,6 +65,10 @@ function calcFireYears(current: number, monthly: number, annualRate: number, yea
   return null;
 }
 
+function clampMonthly(value: number) {
+  return Math.min(Math.max(value, 0), NISA_MONTHLY_LIMIT);
+}
+
 export default function Home() {
   const [monthly, setMonthly] = useState(50000);
   const [annualRate, setAnnualRate] = useState(5);
@@ -71,6 +76,30 @@ export default function Home() {
   const [current, setCurrent] = useState(0);
   const [yearlyCost, setYearlyCost] = useState(3000000);
   const [age, setAge] = useState(35);
+
+  useEffect(() => {
+    const saved = localStorage.getItem("nisa-fire-inputs");
+    if (!saved) return;
+
+    try {
+      const values = JSON.parse(saved);
+      setMonthly(clampMonthly(Number(values.monthly ?? 50000)));
+      setAnnualRate(Number(values.annualRate ?? 5));
+      setYears(Number(values.years ?? 20));
+      setCurrent(Number(values.current ?? 0));
+      setYearlyCost(Number(values.yearlyCost ?? 3000000));
+      setAge(Number(values.age ?? 35));
+    } catch {
+      // 保存データが壊れていたら無視
+    }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem(
+      "nisa-fire-inputs",
+      JSON.stringify({ monthly, annualRate, years, current, yearlyCost, age })
+    );
+  }, [monthly, annualRate, years, current, yearlyCost, age]);
 
   const data = useMemo(
     () => simulate(monthly, annualRate, years, current),
@@ -85,15 +114,16 @@ export default function Home() {
   const remainingAmount = Math.max(0, fireTarget - last.balance);
   const fireProgress = Math.min(100, Math.round((last.balance / fireTarget) * 100));
 
-  const recommendedMonthly = Math.round(monthly * 1.5);
+  const recommendedMonthly = clampMonthly(Math.round(monthly * 1.5));
   const recommendedFireYears = calcFireYears(current, recommendedMonthly, annualRate, yearlyCost);
-  const recommendedFireAge =
-    recommendedFireYears === null ? null : age + recommendedFireYears;
+  const recommendedFireAge = recommendedFireYears === null ? null : age + recommendedFireYears;
 
   const shortenedYears =
     fireYears !== null && recommendedFireYears !== null
       ? Math.max(0, fireYears - recommendedFireYears)
       : null;
+
+  const isMonthlyMax = monthly >= NISA_MONTHLY_LIMIT;
 
   const shareText = [
     "新NISA・FIRE診断をやってみた",
@@ -131,7 +161,20 @@ export default function Home() {
 
             <div className="mt-6 space-y-5">
               <Input label="現在の年齢" value={age} setValue={setAge} suffix="歳" min={18} step={1} />
-              <Input label="毎月積立額" value={monthly} setValue={setMonthly} suffix="円" min={0} step={1000} />
+              <Input
+                label="毎月積立額"
+                value={monthly}
+                setValue={(value) => setMonthly(clampMonthly(value))}
+                suffix="円"
+                min={0}
+                max={NISA_MONTHLY_LIMIT}
+                step={1000}
+              />
+
+              <div className="rounded-2xl bg-emerald-50 p-4 text-sm leading-6 text-emerald-900">
+                新NISAの年間投資枠は最大360万円です。この診断では月30万円を上限にしています。
+              </div>
+
               <Input label="想定年利" value={annualRate} setValue={setAnnualRate} suffix="%" min={0} step={0.1} />
               <Input label="積立年数" value={years} setValue={setYears} suffix="年" min={1} step={1} />
               <Input label="現在の運用資産" value={current} setValue={setCurrent} suffix="円" min={0} step={10000} />
@@ -165,7 +208,11 @@ export default function Home() {
               <div className="mt-6 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-4">
                 <p className="text-sm font-bold text-emerald-300">改善アドバイス</p>
 
-                {recommendedFireAge === null ? (
+                {isMonthlyMax ? (
+                  <p className="mt-2 text-sm leading-7 text-slate-200">
+                    毎月積立額は新NISA年間投資枠の上限目安に達しています。FIREを早めるには、年間生活費を下げる、現在資産を増やす、運用期間を長くする方法が考えられます。
+                  </p>
+                ) : recommendedFireAge === null ? (
                   <p className="mt-2 text-sm leading-7 text-slate-200">
                     毎月積立を増やす、年間生活費を下げる、運用期間を長くすることでFIRE達成に近づきます。
                   </p>
@@ -232,6 +279,22 @@ export default function Home() {
               </ResponsiveContainer>
             </div>
 
+            <section className="mt-6 rounded-3xl border border-slate-200 bg-white p-6">
+              <p className="text-sm font-bold text-emerald-700">次にやること</p>
+              <h3 className="mt-2 text-2xl font-black">新NISAを始める準備をする</h3>
+              <p className="mt-3 text-sm leading-7 text-slate-600">
+                FIREを目指すなら、まずは少額から積立を始めるのが現実的です。証券口座をまだ持っていない場合は、新NISAに対応した証券会社を比較してみましょう。
+              </p>
+              <a
+                href="https://www.fsa.go.jp/policy/nisa2/know/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-5 inline-block rounded-2xl bg-emerald-600 px-5 py-4 text-sm font-black text-white transition hover:bg-emerald-700"
+              >
+                新NISAについて確認する
+              </a>
+            </section>
+
             <p className="mt-6 rounded-2xl bg-amber-50 p-4 text-sm leading-6 text-amber-900">
               このシミュレーションは将来の運用成果を保証するものではありません。税金、手数料、制度変更などは考慮していません。
             </p>
@@ -248,6 +311,7 @@ function Input({
   setValue,
   suffix,
   min,
+  max,
   step,
 }: {
   label: string;
@@ -255,6 +319,7 @@ function Input({
   setValue: (value: number) => void;
   suffix: string;
   min: number;
+  max?: number;
   step: number;
 }) {
   return (
@@ -266,6 +331,7 @@ function Input({
           type="number"
           value={value}
           min={min}
+          max={max}
           step={step}
           onChange={(e) => setValue(Number(e.target.value))}
         />
