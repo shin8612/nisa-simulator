@@ -18,6 +18,8 @@ type Row = {
   profit: number;
 };
 
+const SITE_URL = "https://nisa-simulator-six.vercel.app/";
+
 const yen = new Intl.NumberFormat("ja-JP", {
   style: "currency",
   currency: "JPY",
@@ -81,13 +83,12 @@ export default function Home() {
   const fireYears = calcFireYears(current, monthly, annualRate, yearlyCost);
   const fireAge = fireYears === null ? null : age + fireYears;
 
+  const remainingAmount = Math.max(0, fireTarget - last.balance);
+
   const fireProgress = Math.min(
     100,
     Math.round((last.balance / fireTarget) * 100)
   );
-
-  const fasterFireYears = calcFireYears(current, monthly + 10000, annualRate, yearlyCost);
-  const fasterFireAge = fasterFireYears === null ? null : age + fasterFireYears;
 
   const recommendedMonthly = Math.round(monthly * 1.5);
   const recommendedFireYears = calcFireYears(
@@ -98,6 +99,24 @@ export default function Home() {
   );
   const recommendedFireAge =
     recommendedFireYears === null ? null : age + recommendedFireYears;
+
+  const shortenedYears =
+    fireYears !== null && recommendedFireYears !== null
+      ? Math.max(0, fireYears - recommendedFireYears)
+      : null;
+
+  const shareText = [
+    "新NISA・FIRE診断をやってみた",
+    "",
+    `現在${age}歳`,
+    `毎月積立：${monthly.toLocaleString()}円`,
+    `FIRE予想年齢：${fireAge === null ? "未達成" : `${fireAge}歳`}`,
+    `目標まであと：${yen.format(remainingAmount)}`,
+    "",
+    SITE_URL,
+  ].join("\n");
+
+  const shareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}`;
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-slate-50 to-emerald-50 px-4 py-8 text-slate-900 sm:px-6 lg:px-8">
@@ -147,12 +166,18 @@ export default function Home() {
                   : `あと約${fireYears}年でFIRE目標に到達する見込みです`}
               </p>
 
+              <div className="mt-6 grid gap-4 sm:grid-cols-3">
+                <MiniCard title="FIRE目標額" value={yen.format(fireTarget)} />
+                <MiniCard title="予想資産" value={yen.format(last.balance)} />
+                <MiniCard title="あと必要な金額" value={yen.format(remainingAmount)} />
+              </div>
+
               <div className="mt-6 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-4">
                 <p className="text-sm font-bold text-emerald-300">改善アドバイス</p>
 
                 {recommendedFireAge === null ? (
                   <p className="mt-2 text-sm leading-7 text-slate-200">
-                    毎月積立を増やす、生活費を下げる、運用期間を長くすることでFIRE達成に近づきます。
+                    毎月積立を増やす、年間生活費を下げる、運用期間を長くすることでFIRE達成に近づきます。
                   </p>
                 ) : (
                   <p className="mt-2 text-sm leading-7 text-slate-200">
@@ -163,18 +188,40 @@ export default function Home() {
                     に増やすと、
                     <span className="font-bold text-white"> {recommendedFireAge}歳 </span>
                     でFIREできる可能性があります。
+                    {shortenedYears !== null && shortenedYears > 0 && (
+                      <span className="font-bold text-emerald-300">
+                        {" "}
+                        現在より約{shortenedYears}年短縮できます。
+                      </span>
+                    )}
                   </p>
                 )}
               </div>
 
               <div className="mt-6 grid gap-4 sm:grid-cols-3">
-                <MiniCard title="必要資産" value={yen.format(fireTarget)} />
                 <MiniCard title="達成率" value={`${fireProgress}%`} />
                 <MiniCard
                   title="毎月+1万円なら"
-                  value={fasterFireAge === null ? "未達成" : `${fasterFireAge}歳`}
+                  value={
+                    calcFireYears(current, monthly + 10000, annualRate, yearlyCost) === null
+                      ? "未達成"
+                      : `${age + Number(calcFireYears(current, monthly + 10000, annualRate, yearlyCost))}歳`
+                  }
+                />
+                <MiniCard
+                  title="短縮効果"
+                  value={shortenedYears === null ? "計算不可" : `${shortenedYears}年`}
                 />
               </div>
+
+              <a
+                href={shareUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-6 block rounded-2xl bg-white px-5 py-4 text-center text-sm font-black text-slate-900 transition hover:bg-emerald-100"
+              >
+                Xで診断結果をシェアする
+              </a>
             </div>
 
             <div className="mt-6 grid gap-4 sm:grid-cols-3">
