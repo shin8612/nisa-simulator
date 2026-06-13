@@ -151,9 +151,11 @@ export default function Home() {
             <div className="mt-6 space-y-5">
               <Input label="現在の年齢" value={age} setValue={setAge} suffix="歳" min={18} step={1} />
               <Input label="毎月積立額" value={monthly} setValue={setMonthly} suffix="円" min={0} step={1000} />
+
               <div className="rounded-2xl bg-emerald-50 p-4 text-sm leading-6 text-emerald-900">
                 新NISAの年間投資枠は最大360万円です。本シミュレーターでは、FIRE試算のためNISA枠を超える積立額も入力できます。
               </div>
+
               <Input label="想定年利" value={annualRate} setValue={setAnnualRate} suffix="%" min={0} step={0.1} />
               <Input label="積立年数" value={years} setValue={setYears} suffix="年" min={1} step={1} />
               <Input label="現在の運用資産" value={current} setValue={setCurrent} suffix="円" min={0} step={10000} />
@@ -244,6 +246,38 @@ export default function Home() {
               </ResponsiveContainer>
             </div>
 
+            <section className="mt-8 rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-100">
+              <h2 className="text-xl font-black">この診断について</h2>
+
+              <div className="mt-4 space-y-4 text-sm leading-7 text-slate-600">
+                <p>
+                  この診断は、FIRE（経済的自立・早期リタイア）の考え方として広く知られている「4%ルール」を参考に計算しています。
+                </p>
+
+                <p>
+                  FIRE目標額は「年間生活費 × 25倍」として算出しています。
+                </p>
+
+                <p>
+                  想定年利や将来の市場環境によって結果は大きく変動するため、実際の運用成果を保証するものではありません。
+                </p>
+
+                <div className="flex flex-wrap gap-3 pt-2">
+                  <a href="/about-fire" className="rounded-xl bg-slate-100 px-4 py-2 font-semibold hover:bg-slate-200">
+                    FIREとは？
+                  </a>
+
+                  <a href="/about-nisa" className="rounded-xl bg-slate-100 px-4 py-2 font-semibold hover:bg-slate-200">
+                    新NISAとは？
+                  </a>
+
+                  <a href="/about-rule" className="rounded-xl bg-slate-100 px-4 py-2 font-semibold hover:bg-slate-200">
+                    4%ルールとは？
+                  </a>
+                </div>
+              </div>
+            </section>
+
             <section className="mt-6 rounded-3xl border border-slate-200 bg-white p-6">
               <p className="text-sm font-bold text-emerald-700">次にやること</p>
               <h3 className="mt-2 text-2xl font-black">新NISAを始める準備をする</h3>
@@ -297,10 +331,14 @@ function Input({
         <input
           className="w-full bg-transparent text-lg font-bold outline-none"
           type="number"
-          value={value}
+          value={value === 0 ? "" : value}
           min={min}
           step={step}
-          onChange={(e) => setValue(Number(e.target.value))}
+          onFocus={(e) => e.target.select()}
+          onChange={(e) => {
+            const nextValue = e.target.value;
+            setValue(nextValue === "" ? 0 : Number(nextValue));
+          }}
         />
         <span className="ml-2 text-slate-500">{suffix}</span>
       </div>
