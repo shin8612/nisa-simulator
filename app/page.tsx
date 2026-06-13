@@ -29,9 +29,7 @@ function simulate(monthly: number, annualRate: number, years: number, current: n
   let balance = current;
   let principal = current;
 
-  const rows: Row[] = [
-    { year: 0, principal, balance, profit: balance - principal },
-  ];
+  const rows: Row[] = [{ year: 0, principal, balance, profit: balance - principal }];
 
   for (let month = 1; month <= years * 12; month++) {
     balance = balance * (1 + monthlyRate) + monthly;
@@ -50,12 +48,7 @@ function simulate(monthly: number, annualRate: number, years: number, current: n
   return rows;
 }
 
-function calcFireYears(
-  current: number,
-  monthly: number,
-  annualRate: number,
-  yearlyCost: number
-) {
+function calcFireYears(current: number, monthly: number, annualRate: number, yearlyCost: number) {
   const target = yearlyCost * 25;
   const monthlyRate = annualRate / 100 / 12;
   let balance = current;
@@ -87,10 +80,24 @@ export default function Home() {
   const fireTarget = yearlyCost * 25;
   const fireYears = calcFireYears(current, monthly, annualRate, yearlyCost);
   const fireAge = fireYears === null ? null : age + fireYears;
-  const fireProgress = Math.min(100, Math.round((current / fireTarget) * 100));
+
+  const fireProgress = Math.min(
+    100,
+    Math.round((last.balance / fireTarget) * 100)
+  );
 
   const fasterFireYears = calcFireYears(current, monthly + 10000, annualRate, yearlyCost);
   const fasterFireAge = fasterFireYears === null ? null : age + fasterFireYears;
+
+  const recommendedMonthly = Math.round(monthly * 1.5);
+  const recommendedFireYears = calcFireYears(
+    current,
+    recommendedMonthly,
+    annualRate,
+    yearlyCost
+  );
+  const recommendedFireAge =
+    recommendedFireYears === null ? null : age + recommendedFireYears;
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-slate-50 to-emerald-50 px-4 py-8 text-slate-900 sm:px-6 lg:px-8">
@@ -140,9 +147,29 @@ export default function Home() {
                   : `あと約${fireYears}年でFIRE目標に到達する見込みです`}
               </p>
 
+              <div className="mt-6 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-4">
+                <p className="text-sm font-bold text-emerald-300">改善アドバイス</p>
+
+                {recommendedFireAge === null ? (
+                  <p className="mt-2 text-sm leading-7 text-slate-200">
+                    毎月積立を増やす、生活費を下げる、運用期間を長くすることでFIRE達成に近づきます。
+                  </p>
+                ) : (
+                  <p className="mt-2 text-sm leading-7 text-slate-200">
+                    毎月積立を
+                    <span className="font-bold text-white"> {monthly.toLocaleString()}円 </span>
+                    から
+                    <span className="font-bold text-emerald-300"> {recommendedMonthly.toLocaleString()}円 </span>
+                    に増やすと、
+                    <span className="font-bold text-white"> {recommendedFireAge}歳 </span>
+                    でFIREできる可能性があります。
+                  </p>
+                )}
+              </div>
+
               <div className="mt-6 grid gap-4 sm:grid-cols-3">
                 <MiniCard title="必要資産" value={yen.format(fireTarget)} />
-                <MiniCard title="現在の達成率" value={`${fireProgress}%`} />
+                <MiniCard title="達成率" value={`${fireProgress}%`} />
                 <MiniCard
                   title="毎月+1万円なら"
                   value={fasterFireAge === null ? "未達成" : `${fasterFireAge}歳`}
