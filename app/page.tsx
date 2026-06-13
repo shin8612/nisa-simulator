@@ -133,7 +133,9 @@ export default function Home() {
     <main className="min-h-screen bg-gradient-to-br from-slate-50 to-emerald-50 px-4 py-8 text-slate-900 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-6xl">
         <section className="mb-8 rounded-[2rem] bg-white/90 p-7 shadow-xl shadow-slate-200/60 ring-1 ring-slate-100 sm:p-12">
-          <p className="mb-3 text-sm font-bold text-emerald-700">ログイン不要・無料で試算</p>
+          <p className="mb-3 text-sm font-bold text-emerald-700">
+            ログイン不要・無料で試算
+          </p>
           <h1 className="text-4xl font-black tracking-tight sm:text-6xl">
             新NISA・FIRE
             <br />
@@ -298,9 +300,10 @@ export default function Home() {
               このシミュレーションは将来の運用成果を保証するものではありません。税金、手数料、制度変更などは考慮していません。
             </p>
 
-            <footer className="mt-6 flex gap-4 text-sm text-slate-500">
+            <footer className="mt-6 flex flex-wrap gap-4 text-sm text-slate-500">
               <a href="/privacy" className="underline">プライバシーポリシー</a>
               <a href="/about" className="underline">運営者情報</a>
+              <a href="/sitemap.xml" className="underline">サイトマップ</a>
             </footer>
           </section>
         </div>
