@@ -19,7 +19,6 @@ type Row = {
 };
 
 const SITE_URL = "https://nisa-simulator-six.vercel.app/";
-const NISA_MONTHLY_LIMIT = 300000;
 
 const yen = new Intl.NumberFormat("ja-JP", {
   style: "currency",
@@ -65,10 +64,6 @@ function calcFireYears(current: number, monthly: number, annualRate: number, yea
   return null;
 }
 
-function clampMonthly(value: number) {
-  return Math.min(Math.max(value, 0), NISA_MONTHLY_LIMIT);
-}
-
 export default function Home() {
   const [monthly, setMonthly] = useState(50000);
   const [annualRate, setAnnualRate] = useState(5);
@@ -83,15 +78,13 @@ export default function Home() {
 
     try {
       const values = JSON.parse(saved);
-      setMonthly(clampMonthly(Number(values.monthly ?? 50000)));
+      setMonthly(Number(values.monthly ?? 50000));
       setAnnualRate(Number(values.annualRate ?? 5));
       setYears(Number(values.years ?? 20));
       setCurrent(Number(values.current ?? 0));
       setYearlyCost(Number(values.yearlyCost ?? 3000000));
       setAge(Number(values.age ?? 35));
-    } catch {
-      // 保存データが壊れていたら無視
-    }
+    } catch {}
   }, []);
 
   useEffect(() => {
@@ -114,7 +107,7 @@ export default function Home() {
   const remainingAmount = Math.max(0, fireTarget - last.balance);
   const fireProgress = Math.min(100, Math.round((last.balance / fireTarget) * 100));
 
-  const recommendedMonthly = clampMonthly(Math.round(monthly * 1.5));
+  const recommendedMonthly = Math.round(monthly * 1.5);
   const recommendedFireYears = calcFireYears(current, recommendedMonthly, annualRate, yearlyCost);
   const recommendedFireAge = recommendedFireYears === null ? null : age + recommendedFireYears;
 
@@ -122,8 +115,6 @@ export default function Home() {
     fireYears !== null && recommendedFireYears !== null
       ? Math.max(0, fireYears - recommendedFireYears)
       : null;
-
-  const isMonthlyMax = monthly >= NISA_MONTHLY_LIMIT;
 
   const shareText = [
     "新NISA・FIRE診断をやってみた",
@@ -142,9 +133,7 @@ export default function Home() {
     <main className="min-h-screen bg-gradient-to-br from-slate-50 to-emerald-50 px-4 py-8 text-slate-900 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-6xl">
         <section className="mb-8 rounded-[2rem] bg-white/90 p-7 shadow-xl shadow-slate-200/60 ring-1 ring-slate-100 sm:p-12">
-          <p className="mb-3 text-sm font-bold text-emerald-700">
-            ログイン不要・無料で試算
-          </p>
+          <p className="mb-3 text-sm font-bold text-emerald-700">ログイン不要・無料で試算</p>
           <h1 className="text-4xl font-black tracking-tight sm:text-6xl">
             新NISA・FIRE
             <br />
@@ -161,20 +150,10 @@ export default function Home() {
 
             <div className="mt-6 space-y-5">
               <Input label="現在の年齢" value={age} setValue={setAge} suffix="歳" min={18} step={1} />
-              <Input
-                label="毎月積立額"
-                value={monthly}
-                setValue={(value) => setMonthly(clampMonthly(value))}
-                suffix="円"
-                min={0}
-                max={NISA_MONTHLY_LIMIT}
-                step={1000}
-              />
-
+              <Input label="毎月積立額" value={monthly} setValue={setMonthly} suffix="円" min={0} step={1000} />
               <div className="rounded-2xl bg-emerald-50 p-4 text-sm leading-6 text-emerald-900">
-                新NISAの年間投資枠は最大360万円です。この診断では月30万円を上限にしています。
+                新NISAの年間投資枠は最大360万円です。本シミュレーターでは、FIRE試算のためNISA枠を超える積立額も入力できます。
               </div>
-
               <Input label="想定年利" value={annualRate} setValue={setAnnualRate} suffix="%" min={0} step={0.1} />
               <Input label="積立年数" value={years} setValue={setYears} suffix="年" min={1} step={1} />
               <Input label="現在の運用資産" value={current} setValue={setCurrent} suffix="円" min={0} step={10000} />
@@ -207,12 +186,7 @@ export default function Home() {
 
               <div className="mt-6 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-4">
                 <p className="text-sm font-bold text-emerald-300">改善アドバイス</p>
-
-                {isMonthlyMax ? (
-                  <p className="mt-2 text-sm leading-7 text-slate-200">
-                    毎月積立額は新NISA年間投資枠の上限目安に達しています。FIREを早めるには、年間生活費を下げる、現在資産を増やす、運用期間を長くする方法が考えられます。
-                  </p>
-                ) : recommendedFireAge === null ? (
+                {recommendedFireAge === null ? (
                   <p className="mt-2 text-sm leading-7 text-slate-200">
                     毎月積立を増やす、年間生活費を下げる、運用期間を長くすることでFIRE達成に近づきます。
                   </p>
@@ -237,14 +211,8 @@ export default function Home() {
 
               <div className="mt-6 grid gap-4 sm:grid-cols-3">
                 <MiniCard title="達成率" value={`${fireProgress}%`} />
-                <MiniCard
-                  title="改善後のFIRE年齢"
-                  value={recommendedFireAge === null ? "未達成" : `${recommendedFireAge}歳`}
-                />
-                <MiniCard
-                  title="短縮効果"
-                  value={shortenedYears === null ? "計算不可" : `${shortenedYears}年`}
-                />
+                <MiniCard title="改善後のFIRE年齢" value={recommendedFireAge === null ? "未達成" : `${recommendedFireAge}歳`} />
+                <MiniCard title="短縮効果" value={shortenedYears === null ? "計算不可" : `${shortenedYears}年`} />
               </div>
 
               <a
@@ -269,10 +237,7 @@ export default function Home() {
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="year" tickFormatter={(v) => `${v}年`} />
                   <YAxis tickFormatter={(v) => `${Math.round(Number(v) / 10000)}万`} />
-                  <Tooltip
-                    formatter={(value) => yen.format(Number(value))}
-                    labelFormatter={(label) => `${label}年後`}
-                  />
+                  <Tooltip formatter={(value) => yen.format(Number(value))} labelFormatter={(label) => `${label}年後`} />
                   <Area type="monotone" dataKey="balance" name="資産額" strokeWidth={3} fillOpacity={0.22} />
                   <Area type="monotone" dataKey="principal" name="元本" strokeWidth={2} fillOpacity={0.08} />
                 </AreaChart>
@@ -298,6 +263,11 @@ export default function Home() {
             <p className="mt-6 rounded-2xl bg-amber-50 p-4 text-sm leading-6 text-amber-900">
               このシミュレーションは将来の運用成果を保証するものではありません。税金、手数料、制度変更などは考慮していません。
             </p>
+
+            <footer className="mt-6 flex gap-4 text-sm text-slate-500">
+              <a href="/privacy" className="underline">プライバシーポリシー</a>
+              <a href="/about" className="underline">運営者情報</a>
+            </footer>
           </section>
         </div>
       </div>
@@ -311,7 +281,6 @@ function Input({
   setValue,
   suffix,
   min,
-  max,
   step,
 }: {
   label: string;
@@ -319,7 +288,6 @@ function Input({
   setValue: (value: number) => void;
   suffix: string;
   min: number;
-  max?: number;
   step: number;
 }) {
   return (
@@ -331,7 +299,6 @@ function Input({
           type="number"
           value={value}
           min={min}
-          max={max}
           step={step}
           onChange={(e) => setValue(Number(e.target.value))}
         />
@@ -341,15 +308,7 @@ function Input({
   );
 }
 
-function ResultCard({
-  title,
-  value,
-  strong = false,
-}: {
-  title: string;
-  value: string;
-  strong?: boolean;
-}) {
+function ResultCard({ title, value, strong = false }: { title: string; value: string; strong?: boolean }) {
   return (
     <div className={strong ? "rounded-3xl bg-emerald-600 p-5 text-white shadow-lg" : "rounded-3xl bg-slate-100 p-5"}>
       <p className={strong ? "text-sm text-emerald-50" : "text-sm text-slate-500"}>{title}</p>
